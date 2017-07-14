@@ -75,6 +75,9 @@ class Agent {
   void Dispatch(const v8_inspector::StringView& message);
   InspectorSessionDelegate* delegate();
 
+  void AttachUserContext(v8::Local<v8::Context> context);
+  void DetachUserContext(v8::Local<v8::Context> context);
+
   void RunMessageLoop();
   bool enabled() { return enabled_; }
   void PauseOnNextJavascriptStatement(const std::string& reason);

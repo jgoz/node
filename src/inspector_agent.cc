@@ -650,6 +650,16 @@ void Agent::Disconnect() {
   client_->disconnectFrontend();
 }
 
+void Agent::AttachUserContext(v8::Local<v8::Context> context) {
+  CHECK_NE(client_, nullptr);
+  client_->contextCreated(context, "User VM Context");
+}
+
+void Agent::DetachUserContext(v8::Local<v8::Context> context) {
+  CHECK_NE(client_, nullptr);
+  client_->contextDestroyed(context);
+}
+
 void Agent::RunMessageLoop() {
   CHECK_NE(client_, nullptr);
   client_->runMessageLoopOnPause(CONTEXT_GROUP_ID);
@@ -667,6 +677,44 @@ void Agent::PauseOnNextJavascriptStatement(const std::string& reason) {
   ChannelImpl* channel = client_->channel();
   if (channel != nullptr)
     channel->schedulePauseOnNextStatement(reason);
+}
+
+void AttachContext(const FunctionCallbackInfo<Value>& args) {
+  Environment* env = Environment::GetCurrent(args);
+  inspector::Agent* agent = env->inspector_agent();
+
+  if (!args[0]->IsObject()) {
+    return env->ThrowTypeError(
+        "contextifiedSandbox argument must be an object.");
+  }
+  Local<Object> sandbox = args[0].As<Object>();
+
+  Local<Context> context = ContextFromSandbox(env, sandbox);
+  if (context.IsEmpty()) {
+    return env->ThrowTypeError(
+        "contextifiedSandbox argument must have been converted to a context.");
+  }
+
+  agent->AttachUserContext(context);
+}
+
+void DetachContext(const FunctionCallbackInfo<Value>& args) {
+  Environment* env = Environment::GetCurrent(args);
+  inspector::Agent* agent = env->inspector_agent();
+
+  if (!args[0]->IsObject()) {
+    return env->ThrowTypeError(
+        "contextifiedSandbox argument must be an object.");
+  }
+  Local<Object> sandbox = args[0].As<Object>();
+
+  Local<Context> context = ContextFromSandbox(env, sandbox);
+  if (context.IsEmpty()) {
+    return env->ThrowTypeError(
+        "contextifiedSandbox argument must have been converted to a context.");
+  }
+
+  agent->DetachUserContext(context);
 }
 
 void Open(const FunctionCallbackInfo<Value>& args) {
@@ -718,6 +766,8 @@ void Agent::InitInspector(Local<Object> target, Local<Value> unused,
   env->SetMethod(target, "connect", ConnectJSBindingsSession);
   env->SetMethod(target, "open", Open);
   env->SetMethod(target, "url", Url);
+  env->SetMethod(target, "attachContext", AttachContext);
+  env->SetMethod(target, "detachContext", DetachContext);
 }
 
 void Agent::RequestIoThreadStart() {

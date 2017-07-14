@@ -224,6 +224,9 @@ class ArrayBufferAllocator : public v8::ArrayBuffer::Allocator {
 // by clearing all callbacks that could handle the error.
 void ClearFatalExceptionHandlers(Environment* env);
 
+v8::Local<v8::Context> ContextFromSandbox(Environment* env,
+                                          const v8::Local<v8::Object>& sandbox);
+
 namespace Buffer {
 v8::MaybeLocal<v8::Object> Copy(Environment* env, const char* data, size_t len);
 v8::MaybeLocal<v8::Object> New(Environment* env, size_t size);

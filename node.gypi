@@ -84,6 +84,8 @@
         'src/inspector_io.h',
         'src/inspector_socket.h',
         'src/inspector_socket_server.h',
+        'src/node_contextify.cc',
+        'src/node_watchdog.cc',
       ],
       'dependencies': [
         'v8_inspector_compress_protocol_json#host',
